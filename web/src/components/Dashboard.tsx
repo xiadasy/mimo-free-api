@@ -402,7 +402,7 @@ export function Dashboard() {
             <Clock className="w-4 h-4 text-blue-400" />
             {t('modelUsage')}
           </h2>
-          {stats && stats.by_model.length > 0 ? (
+          {stats && stats.by_model?.length > 0 ? (
             <div className="space-y-3">
               {stats.by_model.map((m) => (
                 <div key={m.model} className="flex items-center gap-3">
