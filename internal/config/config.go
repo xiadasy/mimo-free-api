@@ -1,8 +1,10 @@
+
 package config
 
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -19,7 +21,7 @@ type Account struct {
 	ServiceToken string `json:"service_token"`
 	UserID       string `json:"user_id"`
 	Ph           string `json:"ph"`
-	Active       bool   `json:"active"`
+	Active       bool     `json:"active"`
 }
 
 var (
@@ -34,12 +36,60 @@ func Load(p string) (*Config, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			cfg = &Config{Port: "8080", APIKey: "sk-mimo", DefaultModel: "mimo-v2.5-pro"}
+			applyEnvOverrides()
 			return cfg, Save()
 		}
 		return nil, err
 	}
 	cfg = &Config{}
-	return cfg, json.Unmarshal(data, cfg)
+	if err := json.Unmarshal(data, cfg); err != nil {
+		return nil, err
+	}
+	applyEnvOverrides()
+	return cfg, nil
+}
+
+func applyEnvOverrides() {
+	if cfg == nil {
+		return
+	}
+	if v := envValue("PORT"); v != "" {
+		cfg.Port = v
+	}
+	if v := envValue("MIMO_API_KEY"); v != "" {
+		cfg.APIKey = v
+	} else if v := envValue("API_KEY"); v != "" {
+		cfg.APIKey = v
+	}
+	if v := envValue("MIMO_DEFAULT_MODEL"); v != "" {
+		cfg.DefaultModel = v
+	}
+
+	serviceToken := envValue("MIMO_SERVICE_TOKEN")
+	userID := envValue("MIMO_USER_ID")
+	ph := envValue("MIMO_PH")
+	if serviceToken != "" && userID != "" && ph != "" {
+		id := envValue("MIMO_ACCOUNT_ID")
+		if id == "" {
+			id = "env-account-1"
+		}
+		account := Account{ID: id, ServiceToken: serviceToken, UserID: userID, Ph: ph, Active: true}
+		replaced := false
+		for i := range cfg.Accounts {
+			if cfg.Accounts[i].ID == id {
+				cfg.Accounts[i] = account
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			cfg.Accounts = append(cfg.Accounts, account)
+		}
+	}
+}
+
+func envValue(key string) string {
+	return strings.Trim(strings.TrimSpace(os.Getenv(key)), "\"")
 }
 
 func Get() Config {
