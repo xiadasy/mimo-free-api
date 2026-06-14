@@ -44,4 +44,4 @@ RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /app
 COPY --from=backend /app/mimo-gateway .
 EXPOSE 8080
-CMD ["./mimo-gateway"]
+CMD ["sh", "-c", "test -n \"$MIMO_SERVICE_TOKEN\" && printf '{\"port\":\"${PORT:-8080}\",\"api_key\":\"${MIMO_API_KEY:-sk-mimo}\",\"default_model\":\"${MIMO_DEFAULT_MODEL:-mimo-v2.5-pro}\",\"accounts\":[{\"id\":\"account-1\",\"service_token\":\"${MIMO_SERVICE_TOKEN}\",\"user_id\":\"${MIMO_USER_ID}\",\"ph\":\"${MIMO_PH}\",\"active\":true}]}\n' > config.json || true; exec ./mimo-gateway"]
