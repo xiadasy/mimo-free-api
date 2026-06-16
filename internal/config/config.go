@@ -37,7 +37,8 @@ func Load(p string) (*Config, error) {
 			log.Printf("[config] %s not found, creating from env vars", p)
 			cfg = defaultConfig()
 			applyEnvOverrides()
-			return cfg, Save()
+			Save()
+return cfg, nil
 		}
 		return nil, err
 	}
@@ -46,7 +47,8 @@ func Load(p string) (*Config, error) {
 		log.Printf("[config] failed to parse %s: %v, creating from env vars", p, err)
 		cfg = defaultConfig()
 		applyEnvOverrides()
-		return cfg, Save()
+		Save()
+return cfg, nil
 	}
 	applyEnvOverrides()
 	return cfg, nil
