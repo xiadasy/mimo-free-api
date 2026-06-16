@@ -1,10 +1,8 @@
-
 package config
-func defaultConfig() *Config {
-	return &Config{Port: "8080", APIKey: "sk-mimo", DefaultModel: "mimo-v2.5-pro"}
-}
+
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -12,12 +10,11 @@ import (
 
 type Config struct {
 	Port         string    `json:"port"`
-	APIKey       string    `json:"api_key"` // 网关自身的认证 Key
+	APIKey       string    `json:"api_key"`
 	DefaultModel string    `json:"default_model"`
 	Accounts     []Account `json:"accounts"`
 }
 
-// Account 网页端账号配置
 type Account struct {
 	ID           string `json:"id"`
 	ServiceToken string `json:"service_token"`
@@ -37,14 +34,15 @@ func Load(p string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			cfg = &Config{Port: "8080", APIKey: "sk-mimo", DefaultModel: "mimo-v2.5-pro"}
+			log.Printf("[config] %s not found, creating from env vars", p)
+			cfg = defaultConfig()
 			applyEnvOverrides()
 			return cfg, Save()
 		}
 		return nil, err
 	}
 	cfg = &Config{}
-		if err := json.Unmarshal(data, cfg); err != nil {
+	if err := json.Unmarshal(data, cfg); err != nil {
 		log.Printf("[config] failed to parse %s: %v, creating from env vars", p, err)
 		cfg = defaultConfig()
 		applyEnvOverrides()
@@ -52,6 +50,10 @@ func Load(p string) (*Config, error) {
 	}
 	applyEnvOverrides()
 	return cfg, nil
+}
+
+func defaultConfig() *Config {
+	return &Config{Port: "8080", APIKey: "sk-mimo", DefaultModel: "mimo-v2.5-pro"}
 }
 
 func applyEnvOverrides() {
@@ -69,7 +71,6 @@ func applyEnvOverrides() {
 	if v := envValue("MIMO_DEFAULT_MODEL"); v != "" {
 		cfg.DefaultModel = v
 	}
-
 	serviceToken := envValue("MIMO_SERVICE_TOKEN")
 	userID := envValue("MIMO_USER_ID")
 	ph := envValue("MIMO_PH")
