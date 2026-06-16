@@ -1,6 +1,8 @@
 
 package config
-
+func defaultConfig() *Config {
+	return &Config{Port: "8080", APIKey: "sk-mimo", DefaultModel: "mimo-v2.5-pro"}
+}
 import (
 	"encoding/json"
 	"os"
@@ -42,8 +44,11 @@ func Load(p string) (*Config, error) {
 		return nil, err
 	}
 	cfg = &Config{}
-	if err := json.Unmarshal(data, cfg); err != nil {
-		return nil, err
+		if err := json.Unmarshal(data, cfg); err != nil {
+		log.Printf("[config] failed to parse %s: %v, creating from env vars", p, err)
+		cfg = defaultConfig()
+		applyEnvOverrides()
+		return cfg, Save()
 	}
 	applyEnvOverrides()
 	return cfg, nil
